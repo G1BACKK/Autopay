@@ -1,1 +1,196 @@
-xxx
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UPI App Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div id="app" class="w-full max-w-md p-6 bg-white rounded-xl shadow-md relative">
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800 uppercase">Pay with UPI</h1>
+    
+    <div class="grid grid-cols-1 gap-3 mb-6">
+      <!-- PayTM Button -->
+      <button @click="launch('paytm')" class="
+        flex items-center justify-between
+        bg-blue-100 hover:bg-blue-200 
+        border-2 border-blue-300
+        p-4 rounded-lg 
+        text-blue-900 font-semibold
+        transition-all duration-200
+        hover:shadow-md
+        active:scale-[0.98]
+      ">
+        <div class="flex items-center">
+          <i class="fab fa-google-pay text-2xl mr-3"></i>
+          <span>Pay with PayTM</span>
+        </div>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+
+      <!-- GPay Button -->
+      <button @click="launch('gpay')" class="
+        flex items-center justify-between
+        bg-green-50 hover:bg-green-100
+        border-2 border-green-200
+        p-4 rounded-lg
+        text-green-900 font-semibold
+        transition-all duration-200
+        hover:shadow-md
+        active:scale-[0.98]
+      ">
+        <div class="flex items-center">
+          <i class="fab fa-google-pay text-2xl mr-3 text-green-600"></i>
+          <span>Pay with GPay</span>
+        </div>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+
+      <!-- PhonePe Button -->
+      <button @click="launch('phonepe')" class="
+        flex items-center justify-between
+        bg-purple-50 hover:bg-purple-100
+        border-2 border-purple-200
+        p-4 rounded-lg
+        text-purple-900 font-semibold
+        transition-all duration-200
+        hover:shadow-md
+        active:scale-[0.98]
+      ">
+        <div class="flex items-center">
+          <div class="w-6 h-6 mr-3 bg-purple-600 rounded-full flex items-center justify-center">
+            <span class="text-white text-xs font-bold">P</span>
+          </div>
+          <span>Pay with PhonePe</span>
+        </div>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+
+      <!-- Other UPI Button -->
+      <button @click="launch('others')" class="
+        flex items-center justify-between
+        bg-orange-50 hover:bg-orange-100
+        border-2 border-orange-200
+        p-4 rounded-lg
+        text-orange-900 font-semibold
+        transition-all duration-200
+        hover:shadow-md
+        active:scale-[0.98]
+      ">
+        <div class="flex items-center">
+          <i class="fas fa-mobile-alt text-2xl mr-3 text-orange-600"></i>
+          <span>Other UPI Apps</span>
+        </div>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <div class="text-center text-sm text-gray-500 mb-4">
+      <p>You'll be redirected to your UPI app</p>
+    </div>
+
+    <ul class="text-sm text-gray-700 max-h-64 overflow-y-auto space-y-1 border-t pt-2">
+      <li v-for="(log, index) in logs" :key="index" class="flex items-center py-1">
+        <span :class="{
+          'text-green-500': log.what.includes('✅'),
+          'text-red-500': log.what.includes('❌')
+        }">
+          {{ log.what }} 
+        </span>
+        <span class="text-gray-400 text-xs ml-auto">{{ log.when }}</span>
+      </li>
+    </ul>
+
+    <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
+  </div>
+
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+      setup() {
+        const logs = ref([]);
+        let lastFocus = 0;
+        let lastBlur = 0;
+
+        const baseUpi = {
+          pa: "g1g4822917.rzp@icici",
+          pn: "G1G4",
+          tr: "RZPQhptbTHPKvHtK8qrv2",
+          tn: "Payment to G1G4",
+          am: "1",
+          cu: "INR"
+        };
+
+        function getCurrentTime() {
+          const now = new Date();
+          return now.toLocaleTimeString() + ':' + now.getMilliseconds();
+        }
+
+        function recordEvent(what) {
+          logs.value.push({ what, when: getCurrentTime() });
+        }
+
+        function triggerConfetti() {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+        }
+
+        function buildUri(scheme) {
+          const { pa, pn, tr, tn, am, cu } = baseUpi;
+          return `${scheme}://upi/pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&tr=${encodeURIComponent(tr)}&tn=${encodeURIComponent(tn)}&am=${am}&cu=${cu}`;
+        }
+
+        function launch(app) {
+          let uri = "";
+          if (app === 'paytm') {
+            recordEvent("Opening Paytm");
+            uri = buildUri("paytmmp");
+          } else if (app === 'gpay') {
+            recordEvent("Opening GPay");
+            uri = buildUri("gpay");
+          } else if (app === 'phonepe') {
+            recordEvent("Opening PhonePe");
+            uri = buildUri("phonepe");
+          } else {
+            recordEvent("Opening UPI Generic");
+            uri = buildUri("upi");
+          }
+
+          lastFocus = 0;
+          lastBlur = 0;
+          window.open(uri, "_self");
+        }
+
+        window.addEventListener("focus", () => {
+          lastFocus = Date.now();
+        });
+
+        window.addEventListener("blur", () => {
+          lastBlur = Date.now();
+          if (lastFocus !== 0 && lastBlur - lastFocus < 2000) {
+            recordEvent("✅ UPI App Opened");
+            triggerConfetti();
+          } else {
+            recordEvent("❌ UPI App Not Opened");
+          }
+        });
+
+        return {
+          logs,
+          launch
+        };
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>

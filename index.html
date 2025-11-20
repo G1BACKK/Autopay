@@ -116,14 +116,12 @@
     createApp({
       setup() {
         const logs = ref([]);
-        let lastFocus = 0;
-        let lastBlur = 0;
 
         const baseUpi = {
-          pa: "xxp",
-          pn: "G1G4",
-          tr: "RZPQhptbTHPKvHtK8qrv2",
-          tn: "Payment to G1G4",
+          pa: "paytmqr281005050101y6h4kwjia9ia@paytm",
+          pn: "Paytm Merchant",
+          tr: "281005050101Y6H4KWJIA9IA",
+          tn: "Verified Paytm Merchant",
           am: "1",
           cu: "INR"
         };
@@ -147,48 +145,33 @@
 
         function buildUri(scheme) {
           const { pa, pn, tr, tn, am, cu } = baseUpi;
-          return `${scheme}://upi/pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&tr=${encodeURIComponent(tr)}&tn=${encodeURIComponent(tn)}&am=${am}&cu=${cu}`;
+          return `${scheme}://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&tr=${encodeURIComponent(tr)}&tn=${encodeURIComponent(tn)}&am=${am}&cu=${cu}`;
         }
 
         function launch(app) {
           let uri = "";
+          
           if (app === 'paytm') {
             recordEvent("Opening Paytm");
-            uri = buildUri("paytmmp");
-          } else if (app === 'gpay') {
+            uri = buildUri("upi");   // Paytm uses standard upi://pay
+          } 
+          else if (app === 'gpay') {
             recordEvent("Opening GPay");
             uri = buildUri("gpay");
-          } else if (app === 'phonepe') {
+          } 
+          else if (app === 'phonepe') {
             recordEvent("Opening PhonePe");
             uri = buildUri("phonepe");
-          } else {
+          } 
+          else {
             recordEvent("Opening UPI Generic");
             uri = buildUri("upi");
           }
 
-          lastFocus = 0;
-          lastBlur = 0;
-          window.open(uri, "_self");
+          window.location.href = uri;
         }
 
-        window.addEventListener("focus", () => {
-          lastFocus = Date.now();
-        });
-
-        window.addEventListener("blur", () => {
-          lastBlur = Date.now();
-          if (lastFocus !== 0 && lastBlur - lastFocus < 2000) {
-            recordEvent("✅ UPI App Opened");
-            triggerConfetti();
-          } else {
-            recordEvent("❌ UPI App Not Opened");
-          }
-        });
-
-        return {
-          logs,
-          launch
-        };
+        return { logs, launch };
       }
     }).mount("#app");
   </script>

@@ -25,7 +25,7 @@
         active:scale-[0.98]
       ">
         <div class="flex items-center">
-          <i class="fab fa-google-pay text-2xl mr-3"></i>
+          <i class="fas fa-wallet text-2xl mr-3"></i>
           <span>Pay with PayTM</span>
         </div>
         <i class="fas fa-arrow-right"></i>
@@ -98,17 +98,13 @@
           'text-green-500': log.what.includes('✅'),
           'text-red-500': log.what.includes('❌')
         }">
-          {{ log.what }} 
+          {{ log.what }}
         </span>
         <span class="text-gray-400 text-xs ml-auto">{{ log.when }}</span>
       </li>
     </ul>
 
-    <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
   </div>
-
-  <!-- Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <script>
     const { createApp, ref } = Vue;
@@ -117,58 +113,68 @@
       setup() {
         const logs = ref([]);
 
+        // YOUR PAYTM QR DATA
         const baseUpi = {
           pa: "paytmqr281005050101y6h4kwjia9ia@paytm",
           pn: "Paytm Merchant",
-          tr: "281005050101Y6H4KWJIA9IA",
+          paytmqr: "281005050101Y6H4KWJIA9IA",
           tn: "Verified Paytm Merchant",
           am: "1",
           cu: "INR"
         };
 
-        function getCurrentTime() {
-          const now = new Date();
-          return now.toLocaleTimeString() + ':' + now.getMilliseconds();
+        function t() {
+          return new Date().toLocaleTimeString();
         }
 
-        function recordEvent(what) {
-          logs.value.push({ what, when: getCurrentTime() });
-        }
-
-        function triggerConfetti() {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
+        function record(msg) {
+          logs.value.push({ what: msg, when: t() });
         }
 
         function buildUri(scheme) {
-          const { pa, pn, tr, tn, am, cu } = baseUpi;
-          return `${scheme}://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&tr=${encodeURIComponent(tr)}&tn=${encodeURIComponent(tn)}&am=${am}&cu=${cu}`;
+          const { pa, pn, paytmqr, tn, am, cu } = baseUpi;
+          return (
+            `${scheme}://pay` +
+            `?pa=${encodeURIComponent(pa)}` +
+            `&pn=${encodeURIComponent(pn)}` +
+            `&paytmqr=${encodeURIComponent(paytmqr)}` +
+            `&tn=${encodeURIComponent(tn)}` +
+            `&am=${am}` +
+            `&cu=${cu}`
+          );
         }
 
         function launch(app) {
           let uri = "";
-          
-          if (app === 'paytm') {
-            recordEvent("Opening Paytm");
-            uri = buildUri("upi");   // Paytm uses standard upi://pay
-          } 
-          else if (app === 'gpay') {
-            recordEvent("Opening GPay");
-            uri = buildUri("gpay");
-          } 
-          else if (app === 'phonepe') {
-            recordEvent("Opening PhonePe");
-            uri = buildUri("phonepe");
-          } 
-          else {
-            recordEvent("Opening UPI Generic");
-            uri = buildUri("upi");
+
+          if (app === "paytm") {
+            record("Opening Paytm");
+            uri = buildUri("paytmmp"); // Direct Paytm
+            window.location.href = uri;
+
+            // Fallback
+            setTimeout(() => {
+              window.location.href = buildUri("upi");
+            }, 700);
           }
 
-          window.location.href = uri;
+          else if (app === "gpay") {
+            record("Opening GPay");
+            uri = buildUri("gpay");
+            window.location.href = uri;
+          }
+
+          else if (app === "phonepe") {
+            record("Opening PhonePe");
+            uri = buildUri("phonepe");
+            window.location.href = uri;
+          }
+
+          else {
+            record("Opening Other UPI");
+            uri = buildUri("upi");
+            window.location.href = uri;
+          }
         }
 
         return { logs, launch };
